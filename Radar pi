@@ -1,0 +1,44 @@
+import RPi.GPIO as GPIO
+import time
+from datetime import datetime
+
+# Pin where the RCWL-0516 OUT pin is connected
+RADAR_PIN = 17   # <-- change if needed
+
+# Log file path
+LOG_FILE = "radar_log.txt"
+
+# Setup GPIO
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(RADAR_PIN, GPIO.IN)
+
+print("RCWL-0516 radar motion sensor started.")
+print("Press CTRL+C to stop.")
+
+def log_event(message):
+    """Append a timestamped event to the log file."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    with open(LOG_FILE, "a") as f:
+        f.write(f"[{timestamp}] {message}\n")
+
+# Track last state so we only log when it changes
+last_state = None
+
+try:
+    while True:
+        current_state = GPIO.input(RADAR_PIN)
+
+        if current_state != last_state:  # only log when state changes
+            if current_state:
+                msg = "Motion detected!"
+            else:
+                msg = "No motion"
+            print(msg)
+            log_event(msg)
+            last_state = current_state
+
+        time.sleep(0.2)  # small delay to reduce CPU load
+
+except KeyboardInterrupt:
+    print("\nExiting...")
+    GPIO.cleanup()
